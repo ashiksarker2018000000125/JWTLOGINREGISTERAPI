@@ -11,6 +11,5 @@ namespace JWTLOGINAPI.Contextes
         {
 
         }
-        public DbSet<Employee> Employee { get; set; }
     }
 }

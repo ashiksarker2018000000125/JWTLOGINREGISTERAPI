@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace JWTLOGINAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]/[action]")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -17,7 +17,7 @@ namespace JWTLOGINAPI.Controllers
         }
 
         [HttpPost("Register")]
-        public async Task<IActionResult> RegisterUser(LoginUser user)
+        public async Task<IActionResult> RegisterUser(RegisterUser user)
         {
             if (await _authService.RegisterUser(user))
             {
@@ -31,14 +31,15 @@ namespace JWTLOGINAPI.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return Ok("Invalid credentials");
             }
             if (await _authService.Login(user))
             {
-                var tokenString = _authService.GenerateTokenString(user);
+                var tokenString = await _authService.GenerateTokenString(user);
                 return Ok(tokenString);
             }
-            return BadRequest();
+            return Ok("Invalid credentials" );
         }
+
     }
 }

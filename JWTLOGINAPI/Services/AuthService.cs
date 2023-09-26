@@ -4,29 +4,40 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 namespace JWTLOGINAPI.Services
 {
     public class AuthService : IAuthService
     {
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IConfiguration _config;
 
-        public AuthService(UserManager<IdentityUser> userManager, IConfiguration config)
+        public AuthService(
+            UserManager<IdentityUser> userManager,
+            RoleManager<IdentityRole> roleManager,
+            IConfiguration config
+            )
         {
             _userManager = userManager;
+            _roleManager = roleManager;
             _config = config;
         }
 
-        public async Task<bool> RegisterUser(LoginUser user)
+        public async Task<bool> RegisterUser(RegisterUser user)
         {
             var identityUser = new IdentityUser
             {
                 UserName = user.UserName,
-                Email = user.UserName
+                Email = user.UserName,
+                
             };
 
             var result = await _userManager.CreateAsync(identityUser, user.Password);
+
+            var bx = await _userManager.AddToRoleAsync(identityUser, user.Role);
             return result.Succeeded;
         }
 
@@ -41,12 +52,26 @@ namespace JWTLOGINAPI.Services
             return await _userManager.CheckPasswordAsync(identityUser, user.Password);
         }
 
-        public string GenerateTokenString(LoginUser user)
+        public async Task<string> GenerateTokenString(LoginUser user)
         {
+
+            var query1 = (from loguser in _userManager.Users where loguser.Email == user.UserName
+                          select new {UserId = loguser.Id,}).ToList();
+            IdentityUser identityUser = new IdentityUser
+            {
+                UserName = user.UserName,
+                Email = user.UserName,
+                Id = query1[0].UserId
+
+            };       
+
+            //var role = await _roleManager.FindByIdAsync("2");
+            var roles = await _userManager.GetRolesAsync(identityUser);
+
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Email,user.UserName),
-                new Claim(ClaimTypes.Role,"Admin"),
+                new Claim(ClaimTypes.Role,roles[0].ToString()),
             };
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.GetSection("Jwt:Key").Value));

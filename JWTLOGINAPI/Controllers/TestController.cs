@@ -6,10 +6,11 @@ namespace JWTLOGINAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    
     public class TestController : ControllerBase
     {
         [HttpGet]
+        [Authorize(Roles ="Admin")]
         public string Get()
         {
             return "Log In Successfully";
